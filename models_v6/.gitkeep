@@ -1,0 +1,8 @@
+# Place trained Phase-6 model files in this folder:
+#   xgboost_model.pkl
+#   isolation_forest.pkl
+#   scaler.pkl
+#   label_encoder.pkl
+#   feature_names.pkl
+#   xgboost_calibrator.pkl (optional)
+#   optimal_threshold.json  (tracked in git)

@@ -1,0 +1,39 @@
+# ═══════════════════════════════════════════════════════════════════════
+# MEC PRODUCTION OVERRIDE
+# ═══════════════════════════════════════════════════════════════════════
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.mec.yml up --build
+#
+# Differences from development mode:
+#   1. NO host model mounts — models baked inside image
+#   2. Live capture mode (--live --iface eth0)
+#   3. Dashboard env = MEC, published on host :5000
+#   4. Attacker disabled
+# ═══════════════════════════════════════════════════════════════════════
+
+services:
+
+  detector:
+    volumes:
+      - detection_logs:/app/logs
+    command: python realtime_demo.py --live --iface eth0
+    environment:
+      - MEC_MODE=true
+      - DEPLOY_ENV=MEC
+      - MEC_IP=192.168.10.12
+      - DASHBOARD_URL=http://172.20.0.30:5000
+      - DETECTION_LOG=/app/logs/detections.ndjson
+    ports:
+      - "8765:8765"
+
+  attacker:
+    deploy:
+      replicas: 0
+
+  dashboard:
+    environment:
+      - DEPLOY_ENV=MEC
+      - MEC_IP=192.168.10.12
+      - DETECTION_LOG=/app/logs/detections.ndjson
+    ports:
+      - "5000:5000"

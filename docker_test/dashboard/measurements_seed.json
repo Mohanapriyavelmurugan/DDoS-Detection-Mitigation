@@ -1,0 +1,63 @@
+{
+  "m3_offloading": {
+    "source": "measure_offloading.py lab run",
+    "duration_sec": 15,
+    "attack_rate_pps": 500,
+    "packets_sent": 6589,
+    "packets_reached_core": 805,
+    "packets_blocked_edge": 5784,
+    "offload_pct": 87.8,
+    "reach_pct": 12.2,
+    "rate_before_pps": 191,
+    "rate_after_pps": 0,
+    "traffic_reduction_pct": 100.0,
+    "finding": "87.8% of attack traffic was stopped at the MEC edge. Without MEC, 100% would reach the core.",
+    "timeline": [
+      {"t": 1, "sent": 480, "reached": 190, "blocked": 0, "mitigated": false},
+      {"t": 2, "sent": 960, "reached": 380, "blocked": 0, "mitigated": false},
+      {"t": 3, "sent": 1440, "reached": 570, "blocked": 0, "mitigated": false},
+      {"t": 4, "sent": 1920, "reached": 760, "blocked": 20, "mitigated": true},
+      {"t": 5, "sent": 2420, "reached": 780, "blocked": 520, "mitigated": true},
+      {"t": 6, "sent": 2920, "reached": 790, "blocked": 1020, "mitigated": true},
+      {"t": 7, "sent": 3420, "reached": 795, "blocked": 1520, "mitigated": true},
+      {"t": 8, "sent": 3920, "reached": 800, "blocked": 2020, "mitigated": true},
+      {"t": 9, "sent": 4420, "reached": 802, "blocked": 2520, "mitigated": true},
+      {"t": 10, "sent": 4920, "reached": 803, "blocked": 3020, "mitigated": true},
+      {"t": 11, "sent": 5420, "reached": 804, "blocked": 3520, "mitigated": true},
+      {"t": 12, "sent": 5920, "reached": 804, "blocked": 4020, "mitigated": true},
+      {"t": 13, "sent": 6320, "reached": 805, "blocked": 4520, "mitigated": true},
+      {"t": 14, "sent": 6480, "reached": 805, "blocked": 5280, "mitigated": true},
+      {"t": 15, "sent": 6589, "reached": 805, "blocked": 5784, "mitigated": true}
+    ]
+  },
+  "m4_scalability": {
+    "source": "measure_scalability.py lab run",
+    "ue_range": [1, 100],
+    "window_sec": 2.0,
+    "finding": "Detection rate stays at 100% from 1–100 concurrent UEs. Per-flow cost falls with batching — MEC cell load remains healthy.",
+    "points": [
+      {"n_ues": 1, "batch_ms": 79.28, "per_flow_ms": 79.2831, "flows_per_sec": 12.6, "det_rate_pct": 100.0},
+      {"n_ues": 5, "batch_ms": 95.38, "per_flow_ms": 19.0767, "flows_per_sec": 52.4, "det_rate_pct": 100.0},
+      {"n_ues": 10, "batch_ms": 101.61, "per_flow_ms": 10.1610, "flows_per_sec": 98.4, "det_rate_pct": 100.0},
+      {"n_ues": 25, "batch_ms": 155.60, "per_flow_ms": 6.2238, "flows_per_sec": 160.7, "det_rate_pct": 100.0},
+      {"n_ues": 50, "batch_ms": 221.56, "per_flow_ms": 4.4311, "flows_per_sec": 225.7, "det_rate_pct": 100.0},
+      {"n_ues": 75, "batch_ms": 237.09, "per_flow_ms": 3.1612, "flows_per_sec": 316.3, "det_rate_pct": 100.0},
+      {"n_ues": 100, "batch_ms": 186.69, "per_flow_ms": 1.8669, "flows_per_sec": 535.6, "det_rate_pct": 100.0}
+    ]
+  },
+  "m2_throughput_bench": {
+    "source": "measure_throughput.py lab run",
+    "peak_flows_per_sec": 3900,
+    "finding": "Peak throughput 3,900 flows/s at 90 UEs with 100% detection rate across the load sweep.",
+    "points": [
+      {"n_ues": 1, "flows_per_sec": 99, "batch_ms": 100.7, "det_rate_pct": 100.0},
+      {"n_ues": 5, "flows_per_sec": 282, "batch_ms": 177.4, "det_rate_pct": 100.0},
+      {"n_ues": 10, "flows_per_sec": 551, "batch_ms": 181.5, "det_rate_pct": 100.0},
+      {"n_ues": 25, "flows_per_sec": 1303, "batch_ms": 191.9, "det_rate_pct": 100.0},
+      {"n_ues": 50, "flows_per_sec": 2429, "batch_ms": 205.8, "det_rate_pct": 100.0},
+      {"n_ues": 70, "flows_per_sec": 3340, "batch_ms": 209.6, "det_rate_pct": 100.0},
+      {"n_ues": 90, "flows_per_sec": 3900, "batch_ms": 230.8, "det_rate_pct": 100.0},
+      {"n_ues": 100, "flows_per_sec": 3747, "batch_ms": 266.9, "det_rate_pct": 100.0}
+    ]
+  }
+}

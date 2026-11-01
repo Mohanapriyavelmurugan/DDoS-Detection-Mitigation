@@ -1,0 +1,68 @@
+# ── Python ──────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+.env
+.env.*
+
+# ── IDE / OS ────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Large datasets (exceed GitHub limits) ───────────────────────────
+*.parquet
+*.csv.gz
+balanced_train.parquet
+processed_dataset.parquet
+test.parquet
+
+# ── Large container images / archives ───────────────────────────────
+*.tar
+*.tar.gz
+*.zip
+ddos_detector_v6_mec.tar
+ddos_detector_v6_mec_opt.tar
+
+# ── Trained models (xgboost ~466MB — share via Release / drive) ─────
+models_v6/*.pkl
+models_v6/**/*.pkl
+**/xgboost_model.pkl
+**/isolation_forest.pkl
+**/scaler.pkl
+**/label_encoder.pkl
+**/feature_names.pkl
+**/xgboost_calibrator.pkl
+
+# Keep small config next to models
+!models_v6/optimal_threshold.json
+!models_v6/.gitkeep
+
+# ── Runtime logs / local DB / dashboards data ───────────────────────
+*.log
+*.ndjson
+mitigation_log.csv
+docker_test/dashboard/data/
+**/detections.ndjson
+**/edgeguard.db
+**/events.db
+
+# ── Local scratch / eval dumps ──────────────────────────────────────
+*_report.txt
+latency_report.csv
+latency_summary.txt
+m1_latency_results.txt
+m2_throughput_results.txt
+m3_offloading_results.txt
+m4_scalability_results.txt
+profile_*.txt
+
+# ── Cursor / agent noise ────────────────────────────────────────────
+.cursor/
+agent-transcripts/

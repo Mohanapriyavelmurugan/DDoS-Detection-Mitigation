@@ -1,0 +1,8 @@
+Metric,Value
+Duration_s,15
+Attack_rate_pps,200
+Packets_sent,1777
+Reached_core,197
+Blocked_at_MEC,1580
+Offload_pct,88.9
+Reach_pct,11.1

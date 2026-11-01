@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EdgeGuard · DDoS Detection Dashboard</title>
+  <link rel="stylesheet" href="/static/css/styles.css?v=20261101toast2" />
+</head>
+<body>
+  <div class="bg-orb orb-a" aria-hidden="true"></div>
+  <div class="bg-orb orb-b" aria-hidden="true"></div>
+
+  <header class="topbar glass">
+    <div class="brand" data-nav="home">
+      <span class="brand-mark">EG</span>
+      <div>
+        <div class="brand-name">EdgeGuard</div>
+        <div class="brand-sub">DDoS Detection · MEC Ready</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <button class="nav-btn active" data-nav="home">Home</button>
+      <button class="nav-btn" data-nav="monitor">Live Monitor</button>
+      <button class="nav-btn" data-nav="measure">Measurements</button>
+      <button class="nav-btn" data-nav="history">Attack History</button>
+    </nav>
+
+    <div class="top-actions">
+      <span id="envBadge" class="chip chip-env"></span>
+      <span id="healthBadge" class="chip chip-offline">Waiting for detector</span>
+      <button id="themeToggle" class="icon-btn" title="Toggle light / dark" aria-label="Toggle theme">◐</button>
+    </div>
+  </header>
+
+  <div id="toastHost" class="toast-host" aria-live="polite"></div>
+
+  <!-- ═══════════════ HOME ═══════════════ -->
+  <main id="page-home" class="page active">
+    <section class="hero glass">
+      <p class="eyebrow">Edge-Intelligent Network Defence</p>
+      <h1>Real-Time DDoS Detection for Docker Lab &amp; 5G MEC</h1>
+      <p class="lede">
+        EdgeGuard fuses XGBoost classification, Isolation Forest anomaly detection,
+        and DPI heuristics into a confidence-adaptive three-layer engine. Monitor
+        live threats, measure latency and throughput, and review full attack history
+        from a single professional console — identical on local containers and MEC.
+      </p>
+      <div class="hero-actions">
+        <button class="btn primary" data-nav="monitor">Open Live Monitor</button>
+        <button class="btn ghost" data-nav="measure">View Measurements</button>
+        <button class="btn ghost" data-nav="history">View Attack History</button>
+      </div>
+    </section>
+
+    <section class="home-stats">
+      <article class="stat-card glass">
+        <div class="stat-label">Environment</div>
+        <div class="stat-value" id="homeEnv"></div>
+        <div class="stat-hint">Docker bridge or MEC node</div>
+      </article>
+      <article class="stat-card glass">
+        <div class="stat-label">Session Events</div>
+        <div class="stat-value" id="homeEvents"></div>
+        <div class="stat-hint">Flows analysed this session</div>
+      </article>
+      <article class="stat-card glass">
+        <div class="stat-label">Attacks Detected</div>
+        <div class="stat-value accent" id="homeAttacks"></div>
+        <div class="stat-hint">Fusion score ≥ threshold</div>
+      </article>
+      <article class="stat-card glass">
+        <div class="stat-label">Avg Detect → Mitigate</div>
+        <div class="stat-value" id="homeLatency"></div>
+        <div class="stat-hint">Time from detect decision to firewall action</div>
+      </article>
+    </section>
+
+    <section class="home-grid">
+      <article class="panel glass">
+        <h2>How monitoring works</h2>
+        <ol class="steps">
+          <li>Detector captures or simulates network flows.</li>
+          <li>Three-layer fusion scores each flow and assigns a mitigation tier.</li>
+          <li>Events stream here over WebSocket for live view and durable history.</li>
+        </ol>
+      </article>
+      <article class="panel glass">
+        <h2>Local test quick start</h2>
+        <ol class="steps">
+          <li>Open <strong>Live Monitor</strong> — it stays empty until traffic is detected.</li>
+          <li>From the attacker container, run a controlled attack against the detector.</li>
+          <li>New attacks appear live; previous attacks from this session stay in History.</li>
+        </ol>
+      </article>
+    </section>
+  </main>
+
+  <!-- ═══════════════ LIVE MONITOR ═══════════════ -->
+  <main id="page-monitor" class="page">
+    <div class="page-head">
+      <div>
+        <h1>Live Monitor</h1>
+        <p class="page-sub">Live attack detections and mitigation status only</p>
+      </div>
+      <div class="toolbar">
+        <button class="btn ghost sm" id="pauseStream">Pause</button>
+      </div>
+    </div>
+
+    <div id="alertBanner" class="alert-banner glass hidden">
+      <strong>ATTACK</strong>
+      <span id="alertText"></span>
+    </div>
+
+    <section class="kpi-row kpi-row-live">
+      <article class="kpi glass"><span>Attacks</span><strong id="kpiAttacks" class="danger"></strong></article>
+      <article class="kpi glass"><span>Mitigated</span><strong id="kpiMitigated"></strong></article>
+      <article class="kpi glass"><span>Last attack</span><strong id="kpiLastAttack"></strong></article>
+      <article class="kpi glass"><span>Detector</span><strong id="kpiDetector"></strong></article>
+    </section>
+
+    <section class="monitor-stack">
+      <article class="panel glass feed-panel">
+        <div class="panel-head">
+          <h2>Live attacks</h2>
+          <span class="muted" id="feedMeta">waiting for attacks…</span>
+        </div>
+        <div class="table-wrap table-wrap-live">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Source IP</th>
+                <th>Proto</th>
+                <th>Attack type</th>
+                <th>Fusion</th>
+                <th>Layer</th>
+                <th>Mitigation</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="feedBody"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="panel glass detail-panel">
+        <div class="panel-head">
+          <h2>Attack detail</h2>
+          <span class="muted">Selected row</span>
+        </div>
+        <div id="detailEmpty" class="muted">Click an attack row to inspect scores and mitigation.</div>
+        <div id="detailBody" class="detail hidden"></div>
+      </article>
+    </section>
+  </main>
+
+  <!-- ═══════════════ MEASUREMENTS ═══════════════ -->
+  <main id="page-measure" class="page">
+    <div class="page-head">
+      <div>
+        <h1>Measurements</h1>
+        <p class="page-sub">M1 latency · M2 throughput · M3 offloading · M4 scalability</p>
+      </div>
+      <div class="toolbar">
+        <button class="btn ghost sm" id="refreshMeasure" type="button">Refresh</button>
+      </div>
+    </div>
+
+    <section class="measure-overview" id="measureOverview" aria-label="Key results"></section>
+
+    <section class="measure-grid">
+      <article class="panel glass measure-card" data-m="m1">
+        <header class="measure-head">
+          <div class="measure-title">
+            <span class="measure-badge">M1</span>
+            <div>
+              <h2>Detection latency</h2>
+              <p class="measure-sub" id="m1Source"></p>
+            </div>
+          </div>
+        </header>
+        <p class="measure-finding" id="m1Finding"></p>
+        <div class="stat-strip" id="m1Strip"></div>
+        <div class="measure-block">
+          <h3>Pipeline stages</h3>
+          <div class="chart-frame" id="m1Stack"></div>
+        </div>
+        <div class="measure-block">
+          <h3>Live trend</h3>
+          <div class="chart-frame" id="m1Trend"></div>
+        </div>
+        <div class="measure-block">
+          <h3>Distribution</h3>
+          <div class="dist-list" id="m1Dist"></div>
+        </div>
+      </article>
+
+      <article class="panel glass measure-card" data-m="m2">
+        <header class="measure-head">
+          <div class="measure-title">
+            <span class="measure-badge">M2</span>
+            <div>
+              <h2>Throughput</h2>
+              <p class="measure-sub" id="m2Source"></p>
+            </div>
+          </div>
+        </header>
+        <p class="measure-finding" id="m2Finding"></p>
+        <div class="stat-strip" id="m2Strip"></div>
+        <div class="measure-block">
+          <h3>Session throughput</h3>
+          <div class="chart-frame" id="m2Live"></div>
+        </div>
+        <div class="measure-block">
+          <h3>Lab capacity sweep</h3>
+          <div class="chart-frame tall" id="m2Bench"></div>
+        </div>
+      </article>
+
+      <article class="panel glass measure-card" data-m="m3">
+        <header class="measure-head">
+          <div class="measure-title">
+            <span class="measure-badge">M3</span>
+            <div>
+              <h2>Traffic offloading</h2>
+              <p class="measure-sub" id="m3Source"></p>
+            </div>
+          </div>
+        </header>
+        <p class="measure-finding" id="m3Finding"></p>
+        <div class="stat-strip" id="m3Strip"></div>
+        <div class="measure-split">
+          <div class="measure-block">
+            <h3>Edge vs core share</h3>
+            <div class="chart-frame" id="m3Donut"></div>
+          </div>
+          <div class="measure-block">
+            <h3>Server receive rate</h3>
+            <div class="chart-frame" id="m3Bars"></div>
+          </div>
+        </div>
+        <div class="measure-block">
+          <h3>Attack timeline</h3>
+          <div class="chart-frame tall" id="m3Timeline"></div>
+        </div>
+        <p class="measure-note" id="m3SessionNote"></p>
+      </article>
+
+      <article class="panel glass measure-card" data-m="m4">
+        <header class="measure-head">
+          <div class="measure-title">
+            <span class="measure-badge">M4</span>
+            <div>
+              <h2>Multi-UE scalability</h2>
+              <p class="measure-sub" id="m4Source"></p>
+            </div>
+          </div>
+        </header>
+        <p class="measure-finding" id="m4Finding"></p>
+        <div class="stat-strip" id="m4Strip"></div>
+        <div class="measure-block">
+          <h3>Load curve</h3>
+          <div class="chart-frame tall" id="m4Combo"></div>
+        </div>
+        <div class="measure-block">
+          <h3>UE results table</h3>
+          <div class="table-wrap measure-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>UEs</th>
+                  <th>Batch ms</th>
+                  <th>Per-flow ms</th>
+                  <th>Flows/s</th>
+                  <th>Det rate</th>
+                </tr>
+              </thead>
+              <tbody id="m4Table"></tbody>
+            </table>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <!-- ═══════════════ HISTORY ═══════════════ -->
+  <main id="page-history" class="page">
+    <div class="page-head">
+      <div>
+        <h1>Attack History</h1>
+        <p class="page-sub">Searchable record of source IPs, attack types, scores, and actions</p>
+      </div>
+      <div class="toolbar">
+        <input id="historyQuery" class="input" type="search" placeholder="Search IP, label, action…" />
+        <select id="historyDecision" class="input">
+          <option value="">All decisions</option>
+          <option value="ATTACK">Attacks only</option>
+          <option value="BENIGN">Benign only</option>
+        </select>
+        <button class="btn ghost sm" id="refreshHistory">Refresh</button>
+        <button class="btn ghost sm" id="exportCsv" type="button">Export CSV</button>
+        <button class="btn danger sm" id="clearHistory">Clear</button>
+      </div>
+    </div>
+
+    <section class="history-layout">
+      <article class="panel glass grow">
+        <div class="panel-head">
+          <h2>Event Log</h2>
+          <span class="muted" id="historyMeta">0 records</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time (local)</th>
+                <th>Env</th>
+                <th>Source IP</th>
+                <th>Destination</th>
+                <th>Proto</th>
+                <th>Attack / Label</th>
+                <th>Fusion</th>
+                <th>Layer</th>
+                <th>Decision</th>
+                <th>Mitigation</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <aside class="side-stack">
+        <article class="panel glass">
+          <h2>Top Source IPs</h2>
+          <ul id="topIps" class="simple-list"></ul>
+        </article>
+        <article class="panel glass">
+          <h2>Attack Types</h2>
+          <ul id="topLabels" class="simple-list"></ul>
+        </article>
+        <article class="panel glass">
+          <h2>Detection Layers</h2>
+          <ul id="topLayers" class="simple-list"></ul>
+        </article>
+      </aside>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>EdgeGuard · Phase 6 Fusion Engine · Phase 7 Mitigation</span>
+    <span id="footerClock"></span>
+  </footer>
+
+  <script src="/static/js/charts.js?v=20261101axes"></script>
+  <script src="/static/js/app.js?v=20261101toast2"></script>
+</body>
+</html>

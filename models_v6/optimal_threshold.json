@@ -1,0 +1,14 @@
+{
+  "threshold": 0.61,
+  "tpr": 80.363,
+  "fpr": 1.59,
+  "precision": 99.915,
+  "accuracy": 81.1069,
+  "if_veto": 0.75,
+  "if_disagree": 0.6,
+  "if_unknown": 0.48,
+  "disagree_boost": 0.15,
+  "target_fpr": 0.02,
+  "confidence_mode": "att_prob",
+  "trained_on": "2026-08-16"
+}

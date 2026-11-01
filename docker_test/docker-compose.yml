@@ -1,0 +1,116 @@
+# ═══════════════════════════════════════════════════════════════════════
+# DDoS Detection System — Docker Compose
+# Phase 6 | Confidence-Adaptive 3-Layer Hybrid Detection Engine
+# ═══════════════════════════════════════════════════════════════════════
+#
+# LOCAL (live only — clean dashboard, no test.parquet replay):
+#   docker compose down -v
+#   docker compose up --build
+#   → http://localhost:5000
+#   → History fills only after YOU generate attacks
+#
+# MEC:
+#   docker compose -f docker-compose.yml -f docker-compose.mec.yml up --build
+#   → http://192.168.10.12:5000
+#
+# ═══════════════════════════════════════════════════════════════════════
+
+services:
+
+  detector:
+    build:
+      context: ./detector
+      dockerfile: Dockerfile
+    image: ddos_detector:v6
+    container_name: ddos_detector
+    hostname: detector
+    networks:
+      ddos_testnet:
+        ipv4_address: 172.20.0.10
+    volumes:
+      - ../models_v6:/app/models_v6:ro
+      - detection_logs:/app/logs
+      - ./detector/realtime_demo.py:/app/realtime_demo.py:ro
+      - ./detector/mitigation_engine.py:/app/mitigation_engine.py:ro
+      - ./detector/telemetry.py:/app/telemetry.py:ro
+    environment:
+      - DEPLOY_ENV=LOCAL
+      - DASHBOARD_URL=http://172.20.0.30:5000
+      - DETECTION_LOG=/app/logs/detections.ndjson
+      - DETECTOR_IP=172.20.0.10
+      - IGNORE_IPS=172.20.0.1,172.20.0.10,172.20.0.30
+      - BLOCK_DURATION_SEC=90
+      - THROTTLE_DURATION_SEC=60
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    # Enable SYN cookies at container start (avoids runtime sysctl failures)
+    sysctls:
+      - net.ipv4.tcp_syncookies=1
+    # Live capture only — no test.parquet simulation
+    command: python realtime_demo.py --live --iface eth0
+    depends_on:
+      - dashboard
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import joblib; joblib.load('/app/models_v6/xgboost_model.pkl'); print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  attacker:
+    build:
+      context: ./attacker
+    image: ddos_attacker:v1
+    container_name: ddos_attacker
+    hostname: attacker
+    networks:
+      ddos_testnet:
+        ipv4_address: 172.20.0.20
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    command: tail -f /dev/null
+    tty: true
+    stdin_open: true
+
+  dashboard:
+    build:
+      context: ./dashboard
+    image: ddos_dashboard:v1
+    container_name: ddos_dashboard
+    hostname: dashboard
+    networks:
+      ddos_testnet:
+        ipv4_address: 172.20.0.30
+    ports:
+      - "5000:5000"
+    volumes:
+      - detection_logs:/app/logs
+      - dashboard_data:/app/data
+      - ./dashboard/static:/app/static:ro
+      - ./dashboard/app.py:/app/app.py:ro
+    environment:
+      - DEPLOY_ENV=LOCAL
+      - DETECTION_LOG=/app/logs/detections.ndjson
+      - DATA_DIR=/app/data
+      - MEC_IP=192.168.10.12
+    restart: unless-stopped
+
+networks:
+  ddos_testnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+          gateway: 172.20.0.1
+
+volumes:
+  detection_logs:
+    driver: local
+  dashboard_data:
+    driver: local

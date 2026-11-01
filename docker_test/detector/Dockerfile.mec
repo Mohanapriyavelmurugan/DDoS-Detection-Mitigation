@@ -1,0 +1,57 @@
+# ══════════════════════════════════════════════════════════════════════
+# Dockerfile.mec  —  Optimized MEC Production Image
+# Phase 6 DDoS Detector — Multi-stage: removes gcc after pip compile
+# ══════════════════════════════════════════════════════════════════════
+# Savings vs Dockerfile: ~200 MB smaller (no gcc/binutils at runtime)
+# Models baked in: YES. Always self-contained.
+# ══════════════════════════════════════════════════════════════════════
+
+# ── Stage 1: builder ─────────────────────────────────────────────────
+# Has gcc + libpcap-dev to compile C extensions (scapy, numpy, etc.)
+# This stage is DISCARDED after compilation — not in final image.
+FROM python:3.10-slim AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpcap-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ── Stage 2: final ────────────────────────────────────────────────────
+# Clean runtime image — NO gcc, NO compiler libraries, NO dev headers
+FROM python:3.10-slim AS final
+
+LABEL maintainer="DDoS Detection Project"
+LABEL version="6.0-mec"
+LABEL description="Phase 6 DDoS Detector — Optimized MEC Production Image"
+LABEL architecture="x86_64"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpcap0.8t64 \
+    tcpdump \
+    net-tools \
+    iputils-ping \
+    curl \
+    iptables \
+    procps \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /install /usr/local
+
+WORKDIR /app
+COPY realtime_demo.py     ./realtime_demo.py
+COPY verify_deployment.py ./verify_deployment.py
+COPY telemetry.py         ./telemetry.py
+COPY mitigation_engine.py ./mitigation_engine.py
+COPY models_v6/ ./models_v6/
+RUN python verify_deployment.py
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD python -c "import joblib, json; \
+        joblib.load('/app/models_v6/xgboost_model.pkl'); \
+        json.load(open('/app/models_v6/optimal_threshold.json')); \
+        print('OK')" || exit 1
+
+CMD ["python", "realtime_demo.py", "--samples", "100"]
