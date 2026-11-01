@@ -63,6 +63,9 @@ m3_offloading_results.txt
 m4_scalability_results.txt
 profile_*.txt
 
+# ── Local push notes (optional helper file) ─────────────────────────
+GITHUB_REPO_NOTES.md
+
 # ── Cursor / agent noise ────────────────────────────────────────────
 .cursor/
 agent-transcripts/
